@@ -20,14 +20,14 @@
                 ) -%}
 
 
-{%- set load_attrib_list = get_attrib_list('load', source_model_target,'attrib', false) -%} 
+{%- set load_attrib_list = datavault_extension.get_attrib_list('load', source_model_target,'attrib', false) -%} 
 {#{ log("load_attrib_list: " + load_attrib_list| string, True) }#}
 
-{%- set load_attrib_list_without_coalesce = get_attrib_list('load', source_model_target,'attrib', false) -%} 
+{%- set load_attrib_list_without_coalesce = datavault_extension.get_attrib_list('load', source_model_target,'attrib', false) -%} 
 {#{ log("load_attrib_list_without_coalesce: " + load_attrib_list_without_coalesce| string, True) }#}
-{%- set object_list = get_object_list(source_model_target) -%} 
+{%- set object_list = datavault_extension.get_object_list(source_model_target) -%} 
 {%- set ldts = src_ldts -%} 
-{%- set unknown_key = get_dict_hash_value("unknown_key") -%}    
+{%- set unknown_key = datavault_extension.get_dict_hash_value("unknown_key") -%}    
 WITH
 cte_load_date as
 (
@@ -39,7 +39,7 @@ cte_load_date as
 cte_load AS
 (
     SELECT
-        {{ format_list(load_attrib_list, 1) }}
+        {{ datavault_extension.format_list(load_attrib_list, 1) }}
         , {{ ldts }}
     FROM {{ ref(source_model_source) }}
     where is_check_ok
@@ -59,27 +59,27 @@ cte_load AS
         {%- set type = 'hub' -%}
         {%- set businessobject_name = object.replace('_h','') -%}
         {%- set hk_object = 'hk_' + object -%}
-        {%- set bo_attrib_list = get_attrib_list(object, source_model_target) -%}     
+        {%- set bo_attrib_list = datavault_extension.get_attrib_list(object, source_model_target) -%}     
         {%- if  bo_attrib_list | length == 1 %}{#%#### if we have a combined business-key two or more BK->HK we take them from a satellite  #####%#}
-            {%- set attribut_output_string = "IFF(" + businessobject_name + "_bk != '(unknown)', " + businessobject_name + "_bk, NULL) as " + format_list(bo_attrib_list, 1) -%}
+            {%- set attribut_output_string = "IFF(" + businessobject_name + "_bk != '(unknown)', " + businessobject_name + "_bk, NULL) as " + datavault_extension.format_list(bo_attrib_list, 1) -%}
         {%- endif -%}
         {%- set hashkey_output_string = object + "." + hk_object  -%} 
     {%- elif object.endswith('_l') -%}
         {%- set type = 'link' -%}
         {%- set businessobject_name = object.replace('_l','') -%}
         {%- set hk_object = 'hk_' + object -%}
-        {%- set bo_attrib_list = get_attrib_list(object, source_model_target) -%}
+        {%- set bo_attrib_list = datavault_extension.get_attrib_list(object, source_model_target) -%}
         {%- if bo_attrib_list != [] %}     
-            {%- set attribut_output_string = format_list(bo_attrib_list, 1)-%}
+            {%- set attribut_output_string = datavault_extension.format_list(bo_attrib_list, 1)-%}
         {%- endif %}     
         {%- set hashkey_output_string = object + "." + hk_object  -%} 
 
     {%- elif object.endswith('_nhl') -%}
         {%- set type = 'hlink' -%}
         {%- set businessobject_name = object.replace('_nhl','') -%}
-        {%- set bo_attrib_list = get_attrib_list(object, source_model_target) -%}
+        {%- set bo_attrib_list = datavault_extension.get_attrib_list(object, source_model_target) -%}
         {%- if bo_attrib_list != [] %}     
-            {%- set attribut_output_string = format_list(bo_attrib_list, 1)-%}
+            {%- set attribut_output_string = datavault_extension.format_list(bo_attrib_list, 1)-%}
         {%- endif -%}     
     {%- endif -%}
 
@@ -92,7 +92,7 @@ cte_load AS
         {%- endfor %}
         {#{log("total_attrib_dict: " + total_attrib_dict|string, True)}#}
     {%- endif -%}
-    {%- set sat_list = get_satellite_list(object, source_model_target) -%}
+    {%- set sat_list = datavault_extension.get_satellite_list(object, source_model_target) -%}
     {%- set has_satellites = (sat_list != []) %}
 , cte_{{ businessobject_name }} as
 ( 
@@ -118,7 +118,7 @@ cte_load AS
     {%- if has_satellites %}
     )
         {%- for sat in sat_list -%}
-            {%- set attrib_list = get_attrib_list(sat, source_model_target) -%}  
+            {%- set attrib_list = datavault_extension.get_attrib_list(sat, source_model_target) -%}  
             
             {%- for attrib in attrib_list -%}
                 {%- if not attrib in bo_total_attrib_dict -%}  
@@ -155,7 +155,7 @@ cte_load AS
         SELECT    
               cte_{{object}}.{{ hk_object }}  
             {%- if attrib_list != [] %}
-            , {{ format_list(attrib_list, 1) }}
+            , {{ datavault_extension.format_list(attrib_list, 1) }}
             {%- endif -%}
             , {{sat}}.{{ldts}}
              {%- if sat.endswith('sts')   -%}
@@ -216,16 +216,16 @@ cte_target as
             {%- set x=target_out.append(total_attrib_dict[attrib]) -%} 
         {%- endif  %}
     {%- endfor  %}
-    {{ format_list(target_out, 1) }}
+    {{ datavault_extension.format_list(target_out, 1) }}
     {%- set already_joined = [] -%} 
-    {%- set link_list = get_link_list(source_model_target) -%} 
+    {%- set link_list = datavault_extension.get_link_list(source_model_target) -%} 
     {%- if link_list != []  -%} 
          , cte_load_date.{{ ldts }}
     FROM cte_load_date
         {%- for link in link_list -%}
             {%- set link_businessobject_name = link.replace('_l','').replace('_nhl','') -%}
-            {%- set hub_key_list = get_attrib_list(link, source_model_target) %}    
-            {%- set sat_list = get_satellite_list(link, source_model_target) %}
+            {%- set hub_key_list = datavault_extension.get_attrib_list(link, source_model_target) %}    
+            {%- set sat_list = datavault_extension.get_satellite_list(link, source_model_target) %}
             {%- set link_has_satellites = (sat_list != []) %} 
     INNER JOIN cte_{{link_businessobject_name}} 
             {%- set next_join = 'ON' %}
@@ -236,7 +236,7 @@ cte_target as
             {%- for hub_key in hub_key_list -%}
                 {%- if hub_key.startswith("hk_") -%}
                     {%- set hub_object_name = hub_key.replace("hk_", '').replace('_h','') -%}
-                    {%- set sat_list = get_satellite_list(hub_object_name, source_model_target) %}
+                    {%- set sat_list = datavault_extension.get_satellite_list(hub_object_name, source_model_target) %}
                     
                     {%- set hub_has_satellites = (sat_list != []) %} 
                     {%- if hub_object_name in already_joined %}
@@ -251,7 +251,7 @@ cte_target as
             {%- for hub_key in hub_key_list -%}
                 {%- if hub_key.startswith("hk_") -%}
                     {%- set hub_object_name = hub_key.replace("hk_", '').replace('_h','') -%}
-                    {%- set sat_list = get_satellite_list(hub_object_name + '_h', source_model_target) %}
+                    {%- set sat_list = datavault_extension.get_satellite_list(hub_object_name + '_h', source_model_target) %}
                     {%- set hub_has_satellites = (sat_list != []) %} 
                     {%- if not hub_object_name in already_joined %}
                         {%- set s = already_joined.append(hub_object_name) %}
@@ -265,10 +265,10 @@ cte_target as
             {%- endfor -%}
         {%- endfor %}
     {%- else  -%} 
-        {%- set hub_list = get_hub_list(source_model_target) -%}
+        {%- set hub_list = datavault_extension.get_hub_list(source_model_target) -%}
         {%- for hub in hub_list -%}
             {%- set hub_object_name = hub.replace('_h','') -%}
-            {%- set sat_list = get_satellite_list(hub_object_name + '_h', source_model_target) %}
+            {%- set sat_list = datavault_extension.get_satellite_list(hub_object_name + '_h', source_model_target) %}
             {%- set hub_has_satellites = (sat_list != []) %} 
          , cte_load_date.{{ ldts }}
             {%- if hub_has_satellites %}
@@ -286,24 +286,24 @@ cte_target as
 )
 (
     select
-            {{ format_list(load_attrib_list_without_coalesce, 1) }}
+            {{ datavault_extension.format_list(load_attrib_list_without_coalesce, 1) }}
             , {{ ldts }}
     from cte_load
     MINUS
     select
-            {{ format_list(load_attrib_list_without_coalesce, 1) }}
+            {{ datavault_extension.format_list(load_attrib_list_without_coalesce, 1) }}
             , {{ ldts }}
     from cte_target
 )    
 UNION
 (
     select
-            {{ format_list(load_attrib_list_without_coalesce, 1) }}
+            {{ datavault_extension.format_list(load_attrib_list_without_coalesce, 1) }}
             , {{ ldts }}
     from cte_target
     minus
     select
-            {{ format_list(load_attrib_list_without_coalesce, 1) }}
+            {{ datavault_extension.format_list(load_attrib_list_without_coalesce, 1) }}
             , {{ ldts }}
     from cte_load
 )
