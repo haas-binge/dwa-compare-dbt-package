@@ -44,17 +44,17 @@
                     ) -}}
 
 
-{%- set default_raw_col_definition = get_attribute_definition_list(default_columns, "default", "raw") -%} 
-{%- set additional_raw_col_definition = get_attribute_definition_list(additional_columns, "additional", "raw") -%} 
-{%- set payload_raw_col_definition = get_attribute_definition_list(columns, "payload", "raw") -%} 
+{%- set default_raw_col_definition = datavault_extension.get_attribute_definition_list(default_columns, "default", "raw") -%} 
+{%- set additional_raw_col_definition = datavault_extension.get_attribute_definition_list(additional_columns, "additional", "raw") -%} 
+{%- set payload_raw_col_definition = datavault_extension.get_attribute_definition_list(columns, "payload", "raw") -%} 
 
-{%- set default_typed_col_definition = get_attribute_definition_list(default_columns, "default", "typed") -%} 
-{%- set additional_typed_col_definition = get_attribute_definition_list(additional_columns, "additional", "typed") -%} 
-{%- set payload_typed_col_definition = get_attribute_definition_list(columns, "payload", "typed") -%} 
+{%- set default_typed_col_definition = datavault_extension.get_attribute_definition_list(default_columns, "default", "typed") -%} 
+{%- set additional_typed_col_definition = datavault_extension.get_attribute_definition_list(additional_columns, "additional", "typed") -%} 
+{%- set payload_typed_col_definition = datavault_extension.get_attribute_definition_list(columns, "payload", "typed") -%} 
 
-{%- set default_typecheck_col_definition = get_attribute_definition_list(default_columns, "default", "type_check") -%} 
-{%- set additional_typecheck_col_definition = get_attribute_definition_list(additional_columns, "additional", "type_check") -%} 
-{%- set payload_typecheck_col_definition = get_attribute_definition_list(columns, "payload", "type_check") -%} 
+{%- set default_typecheck_col_definition = datavault_extension.get_attribute_definition_list(default_columns, "default", "type_check") -%} 
+{%- set additional_typecheck_col_definition = datavault_extension.get_attribute_definition_list(additional_columns, "additional", "type_check") -%} 
+{%- set payload_typecheck_col_definition = datavault_extension.get_attribute_definition_list(columns, "payload", "type_check") -%} 
 
 {%- set all_checks_list = [] -%}
 {%- set all_msg_list = [] -%}
