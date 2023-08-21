@@ -72,7 +72,7 @@
 {%- endmacro %}
 
 {% macro get_dubcheck(dub_check_list, dub_check_name) -%}
-    {%- set out_dubcheck = format_list(dub_check_list,0,"," ) -%}
+    {%- set out_dubcheck = datavault_extension.format_list(dub_check_list,0,"," ) -%}
     {%- set out_dubcheck = "ROW_NUMBER() OVER (PARTITION BY " ~ out_dubcheck ~  " ORDER BY " ~ out_dubcheck ~  ") = 1 AS " ~ dub_check_name -%}
     {{ return(out_dubcheck) }}    
 {%- endmacro %}
@@ -86,10 +86,11 @@
     {{ return(out_keycheck_list) }}    
 {%- endmacro %}
 
+
 {% macro get_attribute_definition_list(dict, attribute_type, definition_type) -%}
     {%- set out_attribute_list = [] -%}
     {%- for attribute in dict -%}
-        {%- set out_attribute = get_attribute_definition(dict[attribute], attribute_type, definition_type, attribute) -%}
+        {%- set out_attribute = datavault_extension.get_attribute_definition(dict[attribute], attribute_type, definition_type, attribute) -%}
         {%- if out_attribute != "" -%}
             {{ out_attribute_list.append(out_attribute) }}
         {%- endif -%}
