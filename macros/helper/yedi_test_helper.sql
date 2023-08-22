@@ -1,12 +1,11 @@
 {%- macro get_attrib_list(model_name, source_model_target, object_type='attrib', set_key_to_unknown=true) -%}
 
-    {{ adapter.dispatch('get_attrib_list', 'datavault_extension')(
+    {{ return(adapter.dispatch('get_attrib_list', 'datavault_extension')(
                           model_name=model_name
                         , source_model_target=source_model_target
                         , object_type=object_type
                         , set_key_to_unknown=set_key_to_unknown
-                    ) }}
-
+                    )) }}
 {%- endmacro -%}
 {% macro snowflake__get_attrib_list(model_name=model_name, source_model_target=source_model_target, object_type=object_type, set_key_to_unknown=set_key_to_unknown) -%}
     {%- set out_attrib_list = [] -%}
