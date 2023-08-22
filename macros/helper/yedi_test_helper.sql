@@ -6,6 +6,7 @@
                         , object_type=object_type
                         , set_key_to_unknown=set_key_to_unknown
                     )) }}
+
 {%- endmacro -%}
 {% macro snowflake__get_attrib_list(model_name=model_name, source_model_target=source_model_target, object_type=object_type, set_key_to_unknown=set_key_to_unknown) -%}
     {%- set out_attrib_list = [] -%}
