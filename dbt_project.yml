@@ -68,7 +68,7 @@ vars:
   ext_full_refresh: true
   
 on-run-start:
-   - '{{ autoexec() }}'
+
 models:
   +transient: false
   +persist_docs:
