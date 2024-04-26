@@ -1,13 +1,13 @@
 datavault_extension:
   outputs:
     dev:
-      account: {{ env_var(''DWH_SNOWFLAKE_ACCOUNT'') }}
-      database: '{{ env_var(''DWH_DATABASE'',''DWS'') }}'
-      password: '{{ env_var(''DWH_PASSWORD'') }}'
+      account: ''
+      database: ''
+      password: ''
       role: accountadmin
       schema: <schema>
       threads: 6
       type: snowflake
-      user: '{{ env_var(''DWH_USER'') }}'
+      user: ''
       warehouse: compute_wh
   target: dev
