@@ -26,7 +26,8 @@
 {%- set load_attrib_list_without_coalesce = datavault_extension.get_attrib_list('load', source_model_target,'attrib', false) -%} 
 {#{ log("load_attrib_list_without_coalesce: " + load_attrib_list_without_coalesce| string, True) }#}
 {%- set object_list = datavault_extension.get_object_list(source_model_target) -%} 
-{%- set ldts = src_ldts -%} 
+{%- set ldts = 'ldts' -%} 
+{%- set src_ldts = src_ldts -%} 
 {%- set unknown_key = datavault_extension.get_dict_hash_value("unknown_key") -%}    
 WITH
 cte_load_date as
@@ -40,7 +41,7 @@ cte_load AS
 (
     SELECT
         {{ datavault_extension.format_list(load_attrib_list, 1) }}
-        , {{ ldts }}
+        , {{ src_ldts }} as {{ ldts }}
     FROM {{ ref(source_model_source) }}
     where is_check_ok
 )
@@ -108,7 +109,7 @@ cte_load AS
             {%- if hashkey_output_string != "" %},{%- endif %} {{ attribut_output_string }}
             {%- endif %}
         {%- if  type == 'hlink' %}
-        , cte_load_date.{{ldts}}
+        , cte_load_date.{{ldts}} as ldts
         FROM cte_load_date
         CROSS JOIN {{ ref(object) }} {{object}}
         WHERE  {{object}}.{{ldts}} <= cte_load_date.{{ldts}}

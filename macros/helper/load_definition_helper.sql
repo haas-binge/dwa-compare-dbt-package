@@ -12,21 +12,22 @@
 {% macro snowflake__get_attribute_definition(attribute_dict, attribute_type, definition_type, attribute_name) -%}
 
 {%- set out_attribute =  "" -%}
+{%- set attribute_name_raw = ('"' ~ attribute_name ~ '_raw"')|upper -%}
+{%- set attribute_name = ('"' ~ attribute_name ~ '"')|upper -%}
 {%- if definition_type == 'raw' -%}
     {%- if attribute_type in ['default','additional'] -%}
-        {%- set out_attribute =  "TRIM(" ~ attribute_dict["value"] ~ "::STRING) as " ~ attribute_name ~"_raw" -%}
+        {%- set out_attribute =  'TRIM(' ~ attribute_dict["value"] ~ '::STRING) as ' ~attribute_name_raw -%}
     {%- elif attribute_type in ['payload'] -%}
         {%- if attribute_dict["data_type"]=="NUMBER" -%}
             {%- set decimal_separator = attribute_dict["decimal_separator"] -%}
             {%- set out_attribute =  "TRIM(value:c" ~ attribute_dict["source_column_number"] ~ "::STRING) " -%}
             {%- set out_attribute =  "REPLACE(" ~ out_attribute ~ ", ',', '" ~ decimal_separator ~ "')" -%}
-            {%- set out_attribute =  out_attribute ~ " as " ~ attribute_name ~"_raw" -%}
+            {%- set out_attribute =  out_attribute ~ " as " ~ attribute_name_raw -%}
         {%- else -%}
-            {%- set out_attribute =  "TRIM(value:c" ~ attribute_dict["source_column_number"] ~ "::STRING) as " ~ attribute_name ~"_raw" -%}
+            {%- set out_attribute =  "TRIM(value:c" ~ attribute_dict["source_column_number"] ~ "::STRING) as " ~ attribute_name_raw -%}
         {%- endif -%}
      {%- endif -%}
 {%- elif definition_type == 'typed' -%}
-    {%- set attribute_raw =  attribute_name ~"_raw" -%}
     {%- set data_type =  attribute_dict["data_type"]|upper -%}
     {%- if attribute_dict["format"] | trim == "" -%}
         {%- set data_format = "" -%}
@@ -39,13 +40,12 @@
     {%- endif -%}
 
     {%- if data_type in ["TIMESTAMP","DATE","NUMBER"] -%}
-        {%- set out_attribute =  "TRY_TO_" ~ data_type ~ "(" ~ attribute_raw ~ data_format ~ ") as " ~ attribute_name -%}
+        {%- set out_attribute =  "TRY_TO_" ~ data_type ~ "(" ~ attribute_name_raw ~ data_format ~ ") as " ~ attribute_name -%}
     {%- else -%}
-        {%- set out_attribute =  attribute_raw ~ " as " ~ attribute_name -%}
+        {%- set out_attribute =  attribute_name_raw ~ " as " ~ attribute_name -%}
     {%- endif -%}
 
 {%- elif definition_type == 'type_check' -%}
-    {%- set attribute_raw =  attribute_name ~"_raw" -%}
     {%- set data_type =  attribute_dict["data_type"]|upper -%}
     {%- set data_format =  attribute_dict["format"] -%}
     {%- if not attribute_dict["type_check"] == "" -%} 
@@ -64,7 +64,8 @@
     {%- endif -%}
 
     {%- if data_type in ["TIMESTAMP","DATE","NUMBER"] and type_check -%}    
-            {%- set out_attribute =  "TRY_TO_" ~ data_type ~ "(" ~ attribute_raw ~ data_format ~ ") IS NOT NULL OR " ~ attribute_raw ~ " IS NULL as is_" ~ attribute_name  ~ "_type_ok" -%}
+            {%- set check_name = ('"is_' ~ attribute_name |replace('"','')  ~ '_type_ok"') | upper -%} 
+            {%- set out_attribute =  "TRY_TO_" ~ data_type ~ "(" ~ attribute_name_raw ~ data_format ~ ") IS NOT NULL OR " ~ attribute_name_raw ~ " IS NULL as " ~ check_name -%}
     {%- endif -%}
  
 {%- endif -%}
@@ -72,15 +73,19 @@
 {%- endmacro %}
 
 {% macro get_dubcheck(dub_check_list, dub_check_name) -%}
+    
     {%- set out_dubcheck = datavault_extension.format_list(dub_check_list,0,"," ) -%}
-    {%- set out_dubcheck = "ROW_NUMBER() OVER (PARTITION BY " ~ out_dubcheck ~  " ORDER BY " ~ out_dubcheck ~  ") = 1 AS " ~ dub_check_name -%}
+    {%- set out_dubcheck = "ROW_NUMBER() OVER (PARTITION BY " ~ out_dubcheck ~  " ORDER BY " ~ out_dubcheck ~  ') = 1 AS "' ~ dub_check_name |upper ~ '"' -%}
     {{ return(out_dubcheck) }}    
 {%- endmacro %}
 
 {% macro get_keycheck(keycheck_list, definition_type) -%}
     {%- set out_keycheck_list = [] -%}
+
     {%- for attribute in keycheck_list -%}
-        {%- set keycheck = "COALESCE(" ~ attribute ~ "_raw, '') <> '' as is_" ~ attribute ~ "_key_check_ok" -%}
+        {%- set attribute_name_raw = ('"' ~ attribute ~ '_raw"')|upper -%}
+        {%- set key_check_name = ('"is_' ~ attribute ~ '_key_check_ok"')|upper -%}
+        {%- set keycheck = "COALESCE(" ~ attribute_name_raw ~ ", '') <> '' as " ~ key_check_name -%}
         {{ out_keycheck_list.append(keycheck) }}
     {%- endfor -%}
     {{ return(out_keycheck_list) }}    
@@ -123,11 +128,14 @@
         {%- endif -%} 
         {%- if dict[attribute]["data_type"] in ["TIMESTAMP","DATE","NUMBER"] and type_check -%}
             {%- if out_type == "all_chk" -%}
-            {{ attribute_list.append("is_" ~ attribute ~ "_type_ok") }}
+            {%- set type_check_name = ('"is_' ~ attribute ~ '_type_ok"') |upper -%}
+            {{ attribute_list.append(type_check_name) }}
             {%- elif out_type == "all_msg" -%}
-            {%- set attribute_check_dict = '#{"' ~ attribute ~ '":"# || COALESCE(TO_VARCHAR(' ~ attribute ~ '_raw) ,##) || #"}#' -%}
+            {%- set attribute_name_raw = ('"' ~ attribute ~ '_raw"')|upper -%}
+            {%- set attribute_check_dict = '#{"' ~ attribute ~ '":"# || COALESCE(TO_VARCHAR(' ~ attribute_name_raw ~ ') ,##) || #"}#' -%}
             {%- set attribute_check_dict = attribute_check_dict | replace("#", "'") -%}
-            {{ attribute_list.append("IFF(NOT is_" ~ attribute ~ "_type_ok," ~ attribute_check_dict ~ ",'')") }}
+            {%- set type_check_name = ('"is_' ~ attribute ~ '_type_ok"') |upper -%}
+            {{ attribute_list.append('IFF(NOT ' ~ type_check_name ~ "," ~ attribute_check_dict ~ ",'')") }}
 
             {%- endif -%}
         {%- endif -%}
@@ -136,7 +144,8 @@
 {%- endmacro %}
 {% macro add_attribute_from_list_to_checks_list(check_type_attribute_list, attribute_list, check_type) -%}
     {%- for attribute in check_type_attribute_list -%}
-        {{ attribute_list.append("is_" ~ attribute ~ check_type ~ "_ok") }}
+        {%- set type_check_name = ('"is_' ~ attribute ~ check_type ~ '_ok"') |upper -%}
+        {{ attribute_list.append(type_check_name) }}
     {%- endfor -%}
     {{ return(attribute_list) }}
 {%- endmacro %}
