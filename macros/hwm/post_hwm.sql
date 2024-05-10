@@ -9,6 +9,6 @@
 {% macro snowflake__post_hwm(this) %}
 {% if not flags.FULL_REFRESH %}
 CROSS JOIN hwm_max 
-WHERE ldts > hwm_max.hwm_max_ts
+WHERE ldts_source > hwm_max.hwm_max_ts
 {%- endif -%}
 {% endmacro %}
